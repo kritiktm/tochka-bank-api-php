@@ -1,0 +1,13 @@
+# Игнорируем файлы с паролями
+db.php
+
+# Логи
+*.log
+webhook_debug.log
+
+# Временные файлы
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/
+.idea/

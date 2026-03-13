@@ -1,0 +1,47 @@
+<?php
+/**
+ * @file: db.php.example
+ * @description: Пример файла конфигурации БД. 
+ * ПЕРЕИМЕНУЙТЕ В db.php И ЗАПОЛНИТЕ ДАННЫЕ.
+ */
+
+if (session_status() === PHP_SESSION_NONE && PHP_SAPI !== 'cli') {
+    session_start();
+}
+
+$host = '127.0.0.1';
+$dbname = 'ВАША_БАЗА_ДАННЫХ';
+$user = 'ВАШ_ПОЛЬЗОВАТЕЛЬ';
+$pass = 'ВАШ_ПАРОЛЬ';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Ошибка подключения к базе данных: " . $e->getMessage());
+}
+
+/**
+ * Получение настройки из БД (таблица settings)
+ */
+function getSetting($key, $pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+        $stmt->execute([$key]);
+        return $stmt->fetchColumn();
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
+/**
+ * Отправка Telegram уведомлений (опционально)
+ */
+function sendTelegramMessage($token, $chat_id, $message) {
+    if (!$token || !$chat_id) return ['ok' => false];
+    $url = "https://api.telegram.org/bot$token/sendMessage?chat_id=$chat_id&text=" . urlencode($message) . "&parse_mode=HTML";
+    $result = @file_get_contents($url);
+    return $result ? json_decode($result, true) : ['ok' => false];
+}
+?>
