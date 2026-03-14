@@ -35,7 +35,9 @@ class TochkaService {
         }
 
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        // Рекомендуется указать путь к сертификату, если система его не находит автоматически
+        // curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
         
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);

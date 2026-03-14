@@ -12,6 +12,38 @@ function decodePayload($jwt) {
     return json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
 }
 
+// Список доверенных IP Точки (согласно документации uAPI)
+$allowed_ips = [
+    '185.111.41.0/24',
+    '31.43.34.192/27',
+    '193.124.9.48/29'
+];
+
+function ip_in_range($ip, $range) {
+    if (strpos($range, '/') === false) $range .= '/32';
+    list($range, $netmask) = explode('/', $range, 2);
+    $range_dec = ip2long($range);
+    $ip_dec = ip2long($ip);
+    $wildcard_dec = pow(2, (32 - $netmask)) - 1;
+    $netmask_dec = ~ $wildcard_dec;
+    return (($ip_dec & $netmask_dec) == ($range_dec & $netmask_dec));
+}
+
+$client_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+$is_allowed = false;
+foreach ($allowed_ips as $range) {
+    if (ip_in_range($client_ip, $range)) {
+        $is_allowed = true;
+        break;
+    }
+}
+
+if (!$is_allowed && $client_ip !== '127.0.0.1' && $client_ip !== '::1') {
+    header('HTTP/1.1 403 Forbidden');
+    exit('Access denied for IP: ' . $client_ip);
+}
+
+
 $input = file_get_contents('php://input');
 if (!$input) {
     header('HTTP/1.1 400 Bad Request');

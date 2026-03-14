@@ -16,9 +16,16 @@ $tochka = new TochkaService($jwt, $client_id, $account, $bik);
 $transactions = [];
 $error = null;
 
-// Загрузка ключевых слов для игнорирования
-$stmt = $pdo->query("SELECT keyword FROM ignore_keywords");
-$ignore_keywords = $stmt->fetchAll(PDO::FETCH_COLUMN);
+// Генерация CSRF токена
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("Ошибка безопасности: Неверный CSRF токен");
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['fetch_statement'])) {
     $start_date = $_POST['start_date'];
@@ -89,8 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_transactions'])) 
 <head><title>Импорт из банка Точка</title></head>
 <body>
     <h1>Импорт выписки</h1>
-    <?php if ($error): ?> <p style="color:red"><?= $error ?></p> <?php endif; ?>
+    <?php if ($error): ?> <p style="color:red"><?= htmlspecialchars($error) ?></p> <?php endif; ?>
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
         Начало: <input type="date" name="start_date" required>
         Конец: <input type="date" name="end_date" required>
         <button type="submit" name="fetch_statement">Запросить</button>
